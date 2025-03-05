@@ -1,0 +1,151 @@
+```
+## Manual to Generate a CSR, Request a Certificate, Create a PFX, and Secure the Key (For Non-Technical Users)
+
+This manual will guide you step-by-step through the process of requesting a digital certificate using the DigiCert Certificate Utility application. You don't need to be a tech expert to follow these instructions.
+
+**What is all this and why is it important?**
+
+Imagine a digital certificate as an **identification card** for your computer or system on the internet. This digital ID allows other systems to trust your computer and communicate securely.
+
+To obtain this "digital ID," we need to do four main things:
+
+1.  **Download and Install DigiCert Certificate Utility:** We need the DigiCert tool to create the certificate request and manage the certificate.
+2.  **Generate a Certificate Signing Request (CSR):** Think of this as the **application form** for your digital ID. This form contains information about you and your system.
+3.  **Request the Certificate from Another Area:** Once you have the application form (CSR), you send it to the "identification office" (another area of your company in this case) to get your digital ID (the certificate).
+4.  **Generate a PFX file:** Once you are given your certificate, you need to save it in a special format called PFX. Think of the PFX as the **digital file** that contains your ID and a secret key to use it.
+5.  **Secure the CSR Key:** When you generate the application form (CSR), a **secret key** is also created. This key is very important and you must keep it safe, as it is like the key to your digital ID.
+
+**Tools You Will Need:**
+
+*   **Internet Connection:** To download the DigiCert Certificate Utility application.
+*   **Web Browser:** Such as Chrome, Firefox, Edge, or Safari.
+
+**Step-by-Step Process**
+
+### 0. Download and Install DigiCert Certificate Utility
+
+1.  **Open your web browser.** Launch Chrome, Firefox, Edge, Safari, or your preferred browser.
+
+2.  **Go to the DigiCert website.** In your browser's address bar, type: [https://www.digicert.com/tools/certificate-utility-for-windows](https://www.google.com/search?q=https://www.digicert.com/tools/certificate-utility-for-windows) and press Enter.
+
+    *   This link will take you directly to the download page for DigiCert Certificate Utility for Windows.
+
+3.  **Find the download button.** On the DigiCert webpage, look for a button that says something like "Download Now," "Download for Windows," or similar. This button is usually large and easy to find.
+
+4.  **Click the download button.** Click the button to start downloading the DigiCert Certificate Utility installation file.
+
+5.  **Save the installation file.** Your browser will ask you where you want to save the file. Choose an easy-to-remember location, such as your "Downloads" folder or the "Desktop." Click "Save."
+
+6.  **Wait for the download to complete.** Depending on your internet connection, the download may take a few minutes. You will see the download progress in your browser.
+
+7.  **Run the installation file.** Once the download is complete, find the file you saved (usually named `DigiCertUtil.exe` or similar). Double-click this file to start the installation.
+
+8.  **Follow the installer instructions.** An installation window will open. Follow the instructions that appear on the screen. Usually, you just need to click "Next," "I Agree," and "Finish."
+
+    *   **If it asks where to install the application,** you can leave the default location unless you have a specific reason to change it.
+    *   **If it asks for permission to make changes to your computer,** click "Yes" or "Allow." DigiCert Certificate Utility needs these permissions to install correctly.
+
+9.  **Verify the installation.** Once the installation is complete, look for the DigiCert Certificate Utility icon in your Windows Start Menu. Click the icon to open the application. If the application opens without problems, the installation was successful!
+
+    **Done! You have downloaded and installed DigiCert Certificate Utility.** Now you can use the application to generate your CSR and perform the following steps.
+
+### 1. Generate a CSR (Certificate Signing Request) with DigiCert Certificate Utility
+
+1.  **Open the DigiCert Certificate Utility application.** Find the DigiCert icon in your Windows start menu and open it.
+
+2.  **Go to the "SSL" tab.** In the DigiCert Certificate Utility window, find and click on the tab that says "SSL".
+
+3.  **Click on "Create CSR".** You should see a button that says "Create CSR" or "Create Certificate Request". Click this button.
+
+4.  **Fill in the CSR information.** A window will open where you must enter information. Here we explain what each field means and how to fill it out:
+
+    *   **Certificate Type:** Leave it as is, unless you are told otherwise. Normally, the default option is correct.
+    *   **Key Algorithm:** Leave it as "RSA".
+    *   **Key Size:** Leave it at "2048".
+    *   **Common Name:** **This is very important!** Here you must enter the exact name of the website or system for which you need the certificate. For example:
+        *   If it is for a website: `www.websitename.com`
+        *   If it is for an internal server: `internal-server.mycompany.local`
+        *   **Ask the other area of your company which Common Name you should use.** It is crucial that it is correct.
+    *   **Organization:** Enter the name of your company or organization.
+    *   **Organizational Unit:** Enter your department or area within the company (e.g., "Systems Department," "Development Area").
+    *   **City/Locality:** Enter the city where your organization is located.
+    *   **State/Province:** Enter the state or province where your organization is located.
+    *   **Country:** Select the country where your organization is located.
+    *   **Email Address:** Enter a contact email address (it can be yours or your area's).
+
+    **Example Information:**
+
+    *   **Common Name:** `www.example.com`
+    *   **Organization:** `Example Company S.A. de C.V.`
+    *   **Organizational Unit:** `Technology Department`
+    *   **City/Locality:** `Mexico City`
+    *   **State/Province:** `Mexico City`
+    *   **Country:** `MX` (Mexico)
+    *   **Email Address:** `tech.support@example.com`
+
+5.  **Click on "Generate Request".** Once you have filled in all the information, click this button.
+
+6.  **Save the CSR file.** A window will open to save the CSR file. Choose an easy-to-remember location on your computer (for example, the Desktop or a folder called "Certificates"). Give the file a name that helps you identify it (e.g., `csr_example_website.csr`). **Important:** Make sure you remember where you save this file.
+
+7.  **Copy the CSR text.** After saving the file, DigiCert Certificate Utility will display the contents of the CSR in a text window. **You will need to copy this text to send it to the other area.**
+
+    *   **Select all the text.** Click anywhere in the text and press `Ctrl + A` (or `Cmd + A` on Mac) to select all.
+    *   **Copy the text.** Press `Ctrl + C` (or `Cmd + C` on Mac) to copy the text.
+    *   **Save the copied text.** You can paste this text (`Ctrl + V` or `Cmd + V`) into a new text file (like a Notepad or TextEdit file) and save it as well, just in case. Name this file something like `csr_text_example_website.txt`.
+
+    **Done! You have generated your CSR.** Now you have the "application form" (the CSR text) that you need to send to the other area to request your certificate.
+
+### 2. Request the Certificate from the Other Area
+
+1.  **Send the CSR text to the other area.** Contact the area of your company responsible for issuing certificates (it could be the security department, the systems area, etc.). **Ask who you should send the CSR to and how you should send it.** Normally, they will ask you to send them the CSR text by email or through an internal system.
+
+2.  **Wait to receive the Certificate.** The other area will process your request and send you the digital certificate. **Ask how long it will take to send you the certificate and in what format they will send it to you.** Normally, they will send you a certificate file, which may have extensions such as `.cer`, `.crt`, or `.pem`.
+
+### 3. Generate a PFX File (with the Certificate and Private Key)
+
+Once you have received the certificate file from the other area:
+
+1.  **Open the DigiCert Certificate Utility application again.**
+
+2.  **Go to the "SSL" tab.**
+
+3.  **Click on "Import Certificate".** Find this button and click on it.
+
+4.  **Select the certificate file you received.** A window will open to search for files. Find the certificate file that the other area sent you (the `.cer`, `.crt`, or `.pem` file) and select it. Click "Open" or "Import".
+
+5.  **Verify that the certificate has been imported.** After importing the certificate, you should see it in the list of certificates in the "SSL" tab of DigiCert Certificate Utility. The "Common Name" you used when generating the CSR should appear.
+
+6.  **Select the imported certificate.** Click on the certificate you just imported to select it.
+
+7.  **Click on "Export Certificate".** You should see this button at the bottom of the window. Click on it.
+
+8.  **Choose the "PFX (PKCS #12)" format.** In the export window, make sure the selected format is "PFX (PKCS #12)". It is usually the default option.
+
+9.  **Define a password for the PFX file.** **This is very important for security!** You will be asked to enter and confirm a password to protect the PFX file.
+
+    *   **Create a strong password.** Use a combination of upper and lower case letters, numbers, and symbols.
+    *   **Remember or save the password in a safe place.** You will need this password every time you want to use the PFX file. **If you forget the password, you will not be able to use the PFX certificate.**
+
+10. **Choose where to save the PFX file.** A window will open to save the PFX file. Choose a secure location on your computer and give the file a name (e.g., `example_website_certificate.pfx`). **Important:** Make sure you remember where you save this PFX file and the password you defined.
+
+    **Done! You have generated your PFX file.** This file contains your digital certificate and the private key needed to use it.
+
+### 4. Secure the CSR Key (Very Important!)
+
+**The CSR private key is automatically saved within DigiCert Certificate Utility when you generate the CSR.** When you create the PFX file (step 3), you are backing up this private key along with the certificate.
+
+**How to secure the key?**
+
+*   **Protect the PFX file with a strong password.** As you already did in step 3.9. Do not share this password with anyone who should not have access to the certificate.
+*   **Save the PFX file in a secure place.** Do not save it in a public or easily accessible location. Consider saving it in an encrypted folder or on a secure external storage device.
+*   **Make backup copies of the PFX file.** It is advisable to have backup copies of the PFX file in different secure locations, just in case you lose the original file or your computer fails.
+*   **Do not share the PFX file with unauthorized persons.** The PFX file contains the private key, which is like the access key to your digital identity. You should only share it with people or systems that really need to use this certificate.
+
+**Final Recommendations**
+
+*   **Keep your DigiCert Certificate Utility application updated.** This ensures you have the latest security features.
+*   **Renew your certificate before it expires.** Digital certificates have an expiration date. Make sure you renew your certificate by following this same process before it expires to avoid interruptions in your systems.
+*   **If you have questions, consult your technical support area or the other area of your company that provided you with the certificate.** They will be able to help you with any questions or problems you may have.
+
+Congratulations! You have completed the process to generate a CSR, request a certificate, create a PFX, and secure your key. We hope this manual has been very helpful.
+```
