@@ -1,0 +1,130 @@
+# Ejemplo de uso del módulo desde otro repositorio
+
+# main.tf
+
+terraform {
+required_providers {
+azurerm = {
+source  = “hashicorp/azurerm”
+version = “~> 3.0”
+}
+}
+}
+
+provider “azurerm” {
+features {}
+}
+
+# Llamada al módulo de Databricks
+
+module “databricks” {
+source = “git::https://your-git-repo.com/terraform-modules/databricks?ref=v1.0.0”
+
+# Configuración básica
+
+databricks_name     = “databricks-${var.environment}-${var.project_name}”
+resource_group_name = var.resource_group_name
+location           = var.location
+databricks_sku     = “premium”
+
+# Configuración de red
+
+vnet_name                    = var.vnet_name
+vnet_resource_group_name     = var.vnet_resource_group_name
+
+# NSG associations (opcional)
+
+private_subnet_nsg_association_id = var.private_subnet_nsg_association_id
+public_subnet_nsg_association_id  = var.public_subnet_nsg_association_id
+
+# Configuración adicional
+
+enable_browser_auth_private_endpoint = true
+create_nsg_rules                    = false
+
+# Tags
+
+tags = {
+Environment = var.environment
+Project     = var.project_name
+Owner       = var.owner
+CreatedBy   = “Terraform”
+}
+}
+
+# variables.tf para el repositorio que consume el módulo
+
+variable “environment” {
+description = “Ambiente (dev, staging, prod)”
+type        = string
+}
+
+variable “project_name” {
+description = “Nombre del proyecto”
+type        = string
+}
+
+variable “resource_group_name” {
+description = “Nombre del grupo de recursos”
+type        = string
+}
+
+variable “location” {
+description = “Ubicación de Azure”
+type        = string
+default     = “East US”
+}
+
+variable “vnet_name” {
+description = “Nombre de la red virtual”
+type        = string
+}
+
+variable “vnet_resource_group_name” {
+description = “Grupo de recursos de la red virtual”
+type        = string
+}
+
+variable “private_subnet_nsg_association_id” {
+description = “ID de la asociación NSG subnet privada”
+type        = string
+default     = null
+}
+
+variable “public_subnet_nsg_association_id” {
+description = “ID de la asociación NSG subnet pública”
+type        = string
+default     = null
+}
+
+variable “owner” {
+description = “Propietario del recurso”
+type        = string
+}
+
+# outputs.tf para el repositorio que consume el módulo
+
+output “databricks_workspace_url” {
+description = “URL del workspace de Databricks”
+value       = module.databricks.databricks_workspace_url
+}
+
+output “databricks_workspace_id” {
+description = “ID del workspace de Databricks”
+value       = module.databricks.databricks_workspace_id
+}
+
+output “private_endpoint_ip” {
+description = “IP privada del private endpoint”
+value       = module.databricks.private_endpoint_private_ip
+}
+
+# terraform.tfvars.example
+
+environment                = “dev”
+project_name              = “analytics”
+resource_group_name       = “rg-analytics-dev”
+location                  = “East US”
+vnet_name                 = “vnet-analytics-dev”
+vnet_resource_group_name  = “rg-network-dev”
+owner                     = “DataTeam”
