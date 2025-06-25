@@ -1,0 +1,240 @@
+Claro, con gusto te ayudaré a generar un módulo de Terraform para crear un espacio de trabajo de Azure Databricks con acceso restringido a través de un Private Endpoint.
+Este módulo estará estructurado para ser reutilizable y configurable. A continuación, te presento la estructura de archivos del módulo y el código para cada uno.
+Estructura del Módulo
+Para una correcta organización, te recomiendo la siguiente estructura de directorios:
+/terraform-azurerm-databricks
+|-- main.tf
+|-- variables.tf
+|-- outputs.tf
+|-- README.md
+
+1. variables.tf
+Este archivo define todas las variables de entrada que el módulo necesitará. Esto permite que el módulo sea flexible y se pueda reutilizar en diferentes entornos.
+# variables.tf
+
+variable "resource_group_name" {
+  type        = string
+  description = "El nombre del grupo de recursos donde se crearán los recursos."
+}
+
+variable "location" {
+  type        = string
+  description = "La región de Azure donde se crearán los recursos."
+}
+
+variable "vnet_id" {
+  type        = string
+  description = "El ID de la Virtual Network existente."
+}
+
+variable "databricks_workspace_name" {
+  type        = string
+  description = "El nombre para el espacio de trabajo de Azure Databricks."
+}
+
+variable "databricks_sku" {
+  type        = string
+  description = "El SKU para el espacio de trabajo de Databricks. Se requiere 'premium' para Private Link."
+  default     = "premium"
+}
+
+variable "private_subnet_id" {
+  type        = string
+  description = "ID de la subred privada para el workspace de Databricks (internalsubnet)."
+}
+
+variable "public_subnet_id" {
+  type        = string
+  description = "ID de la subred pública para el workspace de Databricks (publicsubnet)."
+}
+
+variable "private_endpoint_subnet_id" {
+  type        = string
+  description = "ID de la subred donde se desplegará el Private Endpoint (databrickssubnet)."
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Un mapa de etiquetas para aplicar a los recursos."
+  default     = {}
+}
+
+2. main.tf
+Este es el archivo principal que contiene la lógica para crear los recursos de Azure.
+ * azurerm_databricks_workspace: Crea el espacio de trabajo de Databricks configurado para ser inyectado en tu VNet (custom_virtual_network_id) y deshabilita el acceso desde la red pública.
+ * azurerm_private_endpoint: Crea el punto de conexión privado que conecta de forma segura tu VNet al plano de control de Databricks.
+ * azurerm_private_dns_zone y recursos asociados: Configuran la resolución de DNS interna para que las URLs de Databricks apunten a la IP privada del Private Endpoint.
+<!-- end list -->
+# main.tf
+
+# Crea el espacio de trabajo de Azure Databricks con VNet Injection
+resource "azurerm_databricks_workspace" "databricks_ws" {
+  name                = var.databricks_workspace_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku                 = var.databricks_sku
+  tags                = var.tags
+
+  # Deshabilita el acceso desde la red pública al plano de control
+  public_network_access_enabled = false
+
+  # Especifica la VNet y las subredes para el clúster de Databricks
+  custom_virtual_network_id = var.vnet_id
+  custom_private_subnet_id  = var.private_subnet_id
+  custom_public_subnet_id   = var.public_subnet_id
+}
+
+# Crea una Zona DNS Privada para la resolución de nombres del Private Endpoint
+resource "azurerm_private_dns_zone" "databricks_pdns_zone" {
+  name                = "privatelink.azuredatabricks.net"
+  resource_group_name = var.resource_group_name
+}
+
+# Asocia la Zona DNS Privada con la VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "dns_vnet_link" {
+  name                  = "${var.databricks_workspace_name}-dns-vnet-link"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.databricks_pdns_zone.name
+  virtual_network_id    = var.vnet_id
+}
+
+# Crea el Private Endpoint para el workspace de Databricks
+resource "azurerm_private_endpoint" "databricks_pe" {
+  name                = "${var.databricks_workspace_name}-pe"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  subnet_id           = var.private_endpoint_subnet_id
+  tags                = var.tags
+
+  private_service_connection {
+    name                           = "${var.databricks_workspace_name}-psc"
+    private_connection_resource_id = azurerm_databricks_workspace.databricks_ws.id
+    is_manual_connection           = false
+    # El subrecurso 'databricks_ui_api' es el que se expone para la conexión privada
+    subresource_names              = ["databricks_ui_api"]
+  }
+
+  # Configura la integración con la Zona DNS Privada
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [azurerm_private_dns_zone.databricks_pdns_zone.id]
+  }
+
+  # Asegura que el workspace exista antes de crear el endpoint
+  depends_on = [azurerm_databricks_workspace.databricks_ws]
+}
+
+3. outputs.tf
+Este archivo define los valores que el módulo devolverá una vez que se complete la creación de los recursos.
+# outputs.tf
+
+output "databricks_workspace_id" {
+  value       = azurerm_databricks_workspace.databricks_ws.id
+  description = "El ID del espacio de trabajo de Azure Databricks."
+}
+
+output "databricks_workspace_url" {
+  value       = azurerm_databricks_workspace.databricks_ws.workspace_url
+  description = "La URL del espacio de trabajo de Azure Databricks."
+}
+
+output "private_endpoint_id" {
+  value       = azurerm_private_endpoint.databricks_pe.id
+  description = "El ID del Private Endpoint creado para Databricks."
+}
+
+output "private_endpoint_ip_address" {
+  value       = azurerm_private_endpoint.databricks_pe.private_service_connection[0].private_ip_address
+  description = "La dirección IP privada asignada al Private Endpoint."
+}
+
+¿Cómo Consumir este Módulo?
+Ahora, en otro repositorio, puedes crear tu infraestructura de red y luego llamar a este módulo para crear el Databricks.
+Aquí tienes un ejemplo de cómo se vería el archivo main.tf en tu repositorio principal.
+# main.tf (en el repositorio que consume el módulo)
+
+# Configuración del proveedor de Azure
+provider "azurerm" {
+  features {}
+}
+
+# Creación del Grupo de Recursos
+resource "azurerm_resource_group" "rg" {
+  name     = "rg-databricks-prod-01"
+  location = "East US 2"
+}
+
+# Creación de la Red Virtual
+resource "azurerm_virtual_network" "vnet" {
+  name                = "vnet-databricks-prod"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Creación de las subredes requeridas
+resource "azurerm_subnet" "public_subnet" {
+  name                 = "publicsubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+  # Databricks necesita delegar estas subredes
+  delegation {
+    name = "databricks"
+    service_delegation {
+      name    = "Microsoft.Databricks/workspaces"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action", "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"]
+    }
+  }
+}
+
+resource "azurerm_subnet" "private_subnet" {
+  name                 = "internalsubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
+  delegation {
+    name = "databricks-private"
+    service_delegation {
+      name    = "Microsoft.Databricks/workspaces"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action", "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"]
+    }
+  }
+}
+
+resource "azurerm_subnet" "pe_subnet" {
+  name                 = "databrickssubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.3.0/24"]
+  # Deshabilitar las políticas de red para el Private Endpoint es un requisito
+  private_endpoint_network_policies_enabled = false
+}
+
+# --- Llamada al módulo de Databricks ---
+module "databricks_secure" {
+  # Asegúrate de que la ruta sea correcta a donde guardaste el módulo
+  source = "./terraform-azurerm-databricks"
+
+  resource_group_name       = azurerm_resource_group.rg.name
+  location                  = azurerm_resource_group.rg.location
+  vnet_id                   = azurerm_virtual_network.vnet.id
+  databricks_workspace_name = "dbrks-prod-secure-01"
+  databricks_sku            = "premium" # SKU Premium es obligatorio para Private Link
+
+  # Pasa los IDs de las subredes creadas
+  public_subnet_id           = azurerm_subnet.public_subnet.id
+  private_subnet_id          = azurerm_subnet.private_subnet.id
+  private_endpoint_subnet_id = azurerm_subnet.pe_subnet.id
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+  }
+}
+
+Consideraciones Importantes
+ * SKU de Databricks: Para usar Private Link, el SKU del espacio de trabajo de Databricks debe ser "premium".
+ * Delegación de Subredes: Las subredes publicsubnet e internalsubnet deben ser delegadas al servicio Microsoft.Databricks/workspaces.
+ * Políticas de Red para Private Endpoint: La subred donde se aloja el Private Endpoint (databrickssubnet) debe tener la propiedad private_endpoint_network_policies_enabled establecida en false.
+ * DNS: Este código configura una Zona DNS Privada de Azure para resolver la URL de Databricks. Esto es crucial para que la conexión a través del Private Endpoint funcione correctamente desde dentro de la VNet.
