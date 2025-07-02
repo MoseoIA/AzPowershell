@@ -10,16 +10,13 @@ data "azurerm_resource_group" "rg_databricks" {
   name = var.resource_group_name
 }
 
-# --- NUEVA LÓGICA: Obtener la VNet directamente ---
-# En lugar de depender de la subnet, consultamos la VNet para obtener su ID.
-# Esto es más robusto y evita el error "Unsupported attribute".
+# Obtiene la VNet directamente para obtener su ID de forma segura.
 data "azurerm_virtual_network" "databricks_vnet" {
   name                = var.databricks_vnet_name
   resource_group_name = var.databricks_vnet_rg_name
 }
 
 # Obtiene datos de las subnets existentes para la inyección de VNet en Databricks.
-# Ahora solo las usamos para obtener sus nombres, no para el ID de la VNet.
 data "azurerm_subnet" "databricks_public_subnet" {
   name                 = var.databricks_public_subnet_name
   virtual_network_name = var.databricks_vnet_name
@@ -56,9 +53,6 @@ resource "azurerm_databricks_workspace" "databricks_ws" {
     no_public_ip        = true
     public_subnet_name  = data.azurerm_subnet.databricks_public_subnet.name
     private_subnet_name = data.azurerm_subnet.databricks_private_subnet.name
-    
-    # --- CAMBIO CLAVE ---
-    # Ahora usamos el ID del nuevo data source de la VNet.
     virtual_network_id  = data.azurerm_virtual_network.databricks_vnet.id
   }
 
