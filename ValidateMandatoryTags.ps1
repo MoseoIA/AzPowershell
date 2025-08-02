@@ -35,7 +35,7 @@ function Test-AzureConnection {
     }
 }
 
-function Parse-MandatoryTags {
+function Convert-MandatoryTags {
     param([string]$MandatoryTagsString)
     $mandatoryTagsHash = @{}
     try {
@@ -170,7 +170,7 @@ Write-Host "🚀 Starting Azure Mandatory Tag Validation..." -ForegroundColor Cy
 
 if (-not (Test-AzureConnection)) { exit 1 }
 
-$mandatoryTagsHash = Parse-MandatoryTags -MandatoryTagsString $MandatoryTags
+$mandatoryTagsHash = Convert-MandatoryTags -MandatoryTagsString $MandatoryTags
 if (-not $mandatoryTagsHash) { exit 1 }
 
 Write-Host "Auditing for mandatory tags: $($mandatoryTagsHash.Keys -join ', ')" -ForegroundColor Cyan
